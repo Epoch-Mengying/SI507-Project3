@@ -66,51 +66,46 @@ main_page_html = get_from_cache("https://www.nps.gov/index.htm","nps_gov_data.ht
 
 # TRY: 
 # To open and read all 3 of the files
+try:
+    arc_html = open(arkansas_data.html,'r').read()
+    cal_html = open(california_data.html,'r').read()
+    mi_html = open(michigan_data.html, 'r').read()
+    
 # But if you can't, EXCEPT:
+except:    
+    # Create a BeautifulSoup instance of main page data 
+    # Access the unordered list with the states' dropdown
+    main_soup = BeautifulSoup(main_page_html,'html.parser')
+    states = main_soup.find('ul',{"class":"dropdown-menu SearchBar-keywordSearch"})
 
+    # Get a list of all the li (list elements) from the unordered list, using the BeautifulSoup find_all method
+    all_states = states.find_all('li')
 
-# Create a BeautifulSoup instance of main page data 
-# Access the unordered list with the states' dropdown
-main_soup = BeautifulSoup(main_page_html,'html.parser')
-states = main_soup.find('ul',{"class":"dropdown-menu SearchBar-keywordSearch"})
+    # Use a list comprehension or accumulation to get all of the 'href' attributes of the 'a' tag objects in each li, instead of the full li objects
+    all_states_href = [x.find('a')['href'] for x in all_states]
 
-# ark_soup = BeautifulSoup(ark_html,'html.parser')
-# cal_soup = BeautifulSoup(cal_html,'html.parser')
-# mi_soup = BeautifulSoup(mi_html,'html.parser')
-
-# Get a list of all the li (list elements) from the unordered list, using the BeautifulSoup find_all method
-all_states = states.find_all('li')
-
-# Use a list comprehension or accumulation to get all of the 'href' attributes of the 'a' tag objects in each li, instead of the full li objects
-all_states_href = [x.find('a')['href'] for x in all_states]
-
-# Filter the list of relative URLs you just got to include only the 3 you want: AR's, CA's, MI's, using the accumulator pattern & conditional statements
-our_href = []
-for state in all_states_href:
-    if state[7:9] == 'ar' or state[7:9] =='mi' or state[7:9] =='ca':
-        our_href.append(state)
-print(our_href)
-
-# Create 3 URLs to access data from by appending those 3 href values to the main part of the NPS url. Save each URL in a variable.
-NPS = "https://www.nps.gov"
-ark_html = NPS + our_href[0]
-cal_html = NPS + our_href[1]
-mi_html = NPS + our_href[2]
-
+    # Filter the list of relative URLs you just got to include only the 3 you want: AR's, CA's, MI's, using the accumulator pattern & conditional statements
+    our_href = []
+    our_destination = ['ar','mi','ca']
+    for state in all_states_href:
+        if any(x == state[7:9] for x in our_destination):
+            our_href.append(state)
+           
+    # Create 3 URLs to access data from by appending those 3 href values to the main part of the NPS url. Save each URL in a variable.
+    # NPS = "https://www.nps.gov"
+    ark_url = NPS + our_href[0]
+    cal_url = NPS + our_href[1]
+    mi_url = NPS + our_href[2]
 
 ## To figure out what URLs you want to get data from (as if you weren't told initially)...
 # As seen if you debug on the actual site. e.g. Maine parks URL is "http://www.nps.gov/state/me/index.htm", Michigan's is "http://www.nps.gov/state/mi/index.htm" -- so if you compare that to the values in those href attributes you just got... how can you build the full URLs?
 
-
-# Finally, get the HTML data from each of these URLs, and save it in the variables you used in the try clause
-# (Make sure they're the same variables you used in the try clause! Otherwise, all this code will run every time you run the program!)
-
-
-# And then, write each set of data to a file so this won't have to run again.
-
-
-
-
+    # Finally, get the HTML data from each of these URLs, and save it in the variables you used in the try clause
+    # (Make sure they're the same variables you used in the try clause! Otherwise, all this code will run every time you run the program!)
+    # And then, write each set of data to a file so this won't have to run again.
+    ark_html = get_from_cache(ark_url,"arkansas_data.html")
+    cal_html = get_from_cache(cal_url,"california_data.html")
+    mi_html = get_from_cache(mi_url,"michigan_data.html")
 
 
 
@@ -120,8 +115,18 @@ mi_html = NPS + our_href[2]
 
 # - Create BeautifulSoup objects out of all the data you have access to in variables from Part 1
 # - Do some investigation on those BeautifulSoup objects. What data do you have about each state? How is it organized in HTML?
+ark_soup = BeautifulSoup(ark_html, 'html.parser')
+cal_soup = BeautifulSoup(cal_html, 'html.parser')
+mi_soup = BeautifulSoup(mi_html, 'html.parser')
 
 # HINT: remember the method .prettify() on a BeautifulSoup object -- might be useful for your investigation! So, of course, might be .find or .find_all, etc...
+# print("-"*80, "ark")
+# print (ark_soup.prettify())
+# print("-"*80, "california")
+# print (cal_soup.prettify())
+# print("-"*80, "mi")
+# print (mi_soup.prettify())
+
 
 # HINT: Remember that the data you saved is data that includes ALL of the parks/sites/etc in a certain state, but you want the class to represent just ONE park/site/monument/lakeshore.
 
@@ -136,7 +141,23 @@ mi_html = NPS + our_href[2]
 
 
 ## Define your class NationalSite here:
-
+class NationalSite(object):
+    def __init__(self,soup_object):
+        self.location = soup_object.find('h4').string
+        self.name = soup_object.find('h3').string
+        
+        if soup_object.find('h2') is not None:
+            self.type = soup_object.find('h2').string
+        else:
+            self.type = None
+            
+        if soup_object.find('p') is not None:
+            self.description = soup_object.find('p').string
+        else:
+            self.description = ""
+        
+    
+    def __str__()
 
 
 
