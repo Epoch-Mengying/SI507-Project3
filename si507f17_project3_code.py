@@ -13,6 +13,22 @@ import requests
 ######### PART 0 #########
 
 # Write your code for Part 0 here.
+def get_from_cache(url,file_name):
+    try:
+        html = open(file_name, 'r').read()
+    except:
+        html = requests.get(url).text
+        f = open(file_name,"w")
+        f.write(html)
+        f.close()
+    return html
+
+html = get_from_cache("http://newmantaylor.com/gallery.html","cat.html")    
+soup = BeautifulSoup(html, "html.parser")
+# print(soup.prettify())
+img_tag = soup.find_all("img")
+for image in img_tag:
+    print (image.get('alt', "No alternative text provided!"))
 
 
 ######### PART 1 #########
@@ -27,9 +43,17 @@ import requests
 
 # We've provided comments to guide you through the complex try/except, but if you prefer to build up the code to do this scraping and caching yourself, that is OK.
 
+def get_from_cache(url,file_name):
+    try:
+        html = open(file_name, 'r').read()
+    except:
+        html = requests.get(url).text
+        f = open(file_name,"w")
+        f.write(html)
+        f.close()
+    return html
 
-
-
+main_page_html = get_from_cache("https://www.nps.gov/index.htm","nps_gov_data.html")
 
 
 # Get individual states' data...
@@ -42,20 +66,36 @@ import requests
 
 # TRY: 
 # To open and read all 3 of the files
-
 # But if you can't, EXCEPT:
+
 
 # Create a BeautifulSoup instance of main page data 
 # Access the unordered list with the states' dropdown
+main_soup = BeautifulSoup(main_page_html,'html.parser')
+states = main_soup.find('ul',{"class":"dropdown-menu SearchBar-keywordSearch"})
+
+# ark_soup = BeautifulSoup(ark_html,'html.parser')
+# cal_soup = BeautifulSoup(cal_html,'html.parser')
+# mi_soup = BeautifulSoup(mi_html,'html.parser')
 
 # Get a list of all the li (list elements) from the unordered list, using the BeautifulSoup find_all method
+all_states = states.find_all('li')
 
 # Use a list comprehension or accumulation to get all of the 'href' attributes of the 'a' tag objects in each li, instead of the full li objects
+all_states_href = [x.find('a')['href'] for x in all_states]
 
 # Filter the list of relative URLs you just got to include only the 3 you want: AR's, CA's, MI's, using the accumulator pattern & conditional statements
-
+our_href = []
+for state in all_states_href:
+    if state[7:9] == 'ar' or state[7:9] =='mi' or state[7:9] =='ca':
+        our_href.append(state)
+print(our_href)
 
 # Create 3 URLs to access data from by appending those 3 href values to the main part of the NPS url. Save each URL in a variable.
+NPS = "https://www.nps.gov"
+ark_html = NPS + our_href[0]
+cal_html = NPS + our_href[1]
+mi_html = NPS + our_href[2]
 
 
 ## To figure out what URLs you want to get data from (as if you weren't told initially)...
