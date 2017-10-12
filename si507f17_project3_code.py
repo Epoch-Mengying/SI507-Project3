@@ -92,7 +92,7 @@ except:
             our_href.append(state)
            
     # Create 3 URLs to access data from by appending those 3 href values to the main part of the NPS url. Save each URL in a variable.
-    # NPS = "https://www.nps.gov"
+    NPS = "https://www.nps.gov"
     ark_url = NPS + our_href[0]
     cal_url = NPS + our_href[1]
     mi_url = NPS + our_href[2]
@@ -143,22 +143,44 @@ mi_soup = BeautifulSoup(mi_html, 'html.parser')
 ## Define your class NationalSite here:
 class NationalSite(object):
     def __init__(self,soup_object):
-        self.location = soup_object.find('h4').string
-        self.name = soup_object.find('h3').string
+        self.location = soup_object.find('h4').text
+        self.name = soup_object.find('h3').text
         
         if soup_object.find('h2') is not None:
-            self.type = soup_object.find('h2').string
+            self.type = soup_object.find('h2').text
         else:
             self.type = None
-            
+           
         if soup_object.find('p') is not None:
-            self.description = soup_object.find('p').string
+            self.description = soup_object.find('p').text
         else:
             self.description = ""
         
-    
-    def __str__()
+        if soup_object.find('ul') is not None:
+            all_lists = soup_object.find('ul').find_all('a')
+            if any(item.text == "Basic Information" for item in all_lists): 
+                basic_info_link = [item for item in all_lists if item.text == "Basic Information"].find('a')['href']
+                # print ("@@@", basic_info_link)
+                basic_info_html = requests.get(basic_info_link).text
+                basic_info_soup = BeautifulSoup(basic_info_html,'html.parser')
+                if basic_info_soup.find('div',{"class": "physical-address"}) is not None:
+                    self.address = basic_info_soup.find('div',{"class": "physical-address"}).find['span'].text
+                else:
+                    self.address = ""
+            else:
+                self.address = ""
+           
 
+            
+    
+    def __str__(self):
+        return "{} | {}".format(self.name, self.location)
+        
+    def get_mailing_address(self):
+        return self.address
+        
+    def __contains__(self, name):
+        return name in self.name
 
 
 
@@ -168,24 +190,25 @@ class NationalSite(object):
 # soup_park_inst = BeautifulSoup(f.read(), 'html.parser') # an example of 1 BeautifulSoup instance to pass into your class
 # sample_inst = NationalSite(soup_park_inst)
 # f.close()
-
+# print (sample_inst.get_mailing_address)
 
 ######### PART 3 #########
 
 # Create lists of NationalSite objects for each state's parks.
 
 # HINT: Get a Python list of all the HTML BeautifulSoup instances that represent each park, for each state.
-
-
-
+arkansas_natl_sites = [NationalSite(item) for item in ark_soup.find('ul', {"id":"list_parks"}).find_all('div',{"class":"col-md-9 col-sm-9 col-xs-12 table-cell list_left"})]
+california_natl_sites = [NationalSite(item) for item in cal_soup.find('ul', {"id":"list_parks"}).find_all('div',{"class":"col-md-9 col-sm-9 col-xs-12 table-cell list_left"})]
+michigan_natl_sites = [NationalSite(item) for item in mi_soup.find('ul', {"id":"list_parks"}).find_all('div',{"class":"col-md-9 col-sm-9 col-xs-12 table-cell list_left"})]
 
 ##Code to help you test these out:
 # for p in california_natl_sites:
-# 	print(p)
+#     print ("#"*80)
+#     print(p)
 # for a in arkansas_natl_sites:
-# 	print(a)
+#     print(a)
 # for m in michigan_natl_sites:
-# 	print(m)
+#     print(m)
 
 
 
