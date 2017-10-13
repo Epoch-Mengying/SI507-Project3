@@ -143,41 +143,46 @@ mi_soup = BeautifulSoup(mi_html, 'html.parser')
 ## Define your class NationalSite here:
 class NationalSite(object):
     def __init__(self,soup_object):
-        self.location = soup_object.find('h4').text
-        self.name = soup_object.find('h3').text
+        
+        self.location = soup_object.find('h4').text.strip()
+        self.name = soup_object.find('h3').text.strip()
         
         if soup_object.find('h2') is not None:
-            self.type = soup_object.find('h2').text
+            self.type = soup_object.find('h2').text.strip()
         else:
             self.type = None
            
         if soup_object.find('p') is not None:
-            self.description = soup_object.find('p').text
+            self.description = soup_object.find('p').text.strip()
         else:
             self.description = ""
         
-        if soup_object.find('ul') is not None:
-            all_lists = soup_object.find('ul').find_all('a')
-            if any(item.text == "Basic Information" for item in all_lists): 
-                basic_info_link = [item for item in all_lists if item.text == "Basic Information"].find('a')['href']
-                # print ("@@@", basic_info_link)
+        
+        #print(soup_object.find('div', {"class": "col-md-12 col-sm-12 noPadding stateListLinks"}).prettify())
+        if soup_object.find('div', {"class":"col-md-12 col-sm-12 noPadding stateListLinks"}) is not None:
+            all_lists = soup_object.find('div', {"col-md-12 col-sm-12 noPadding stateListLinks"}).find_all('li')
+            
+            if all_lists[1] is not None: 
+                basic_info_link = all_lists[1].find('a')['href']
                 basic_info_html = requests.get(basic_info_link).text
                 basic_info_soup = BeautifulSoup(basic_info_html,'html.parser')
                 if basic_info_soup.find('div',{"class": "physical-address"}) is not None:
-                    self.address = basic_info_soup.find('div',{"class": "physical-address"}).find['span'].text
+                    self.address = basic_info_soup.find('div',{"class": "physical-address"}).text.strip()
                 else:
                     self.address = ""
             else:
-                self.address = ""
-           
-
-            
-    
+                self.address = ""  
+                    
+        else:
+            #print ("ss")
+            self.address = ""
+                
+  
     def __str__(self):
-        return "{} | {}".format(self.name, self.location)
+        return "{} | {}".format(self.name.strip(), self.location.strip())
         
     def get_mailing_address(self):
-        return self.address
+        return self.address.replace('\n','/')
         
     def __contains__(self, name):
         return name in self.name
@@ -190,24 +195,31 @@ class NationalSite(object):
 # soup_park_inst = BeautifulSoup(f.read(), 'html.parser') # an example of 1 BeautifulSoup instance to pass into your class
 # sample_inst = NationalSite(soup_park_inst)
 # f.close()
-# print (sample_inst.get_mailing_address)
+# print ("##", sample_inst.get_mailing_address())
 
 ######### PART 3 #########
 
 # Create lists of NationalSite objects for each state's parks.
 
 # HINT: Get a Python list of all the HTML BeautifulSoup instances that represent each park, for each state.
-arkansas_natl_sites = [NationalSite(item) for item in ark_soup.find('ul', {"id":"list_parks"}).find_all('div',{"class":"col-md-9 col-sm-9 col-xs-12 table-cell list_left"})]
-california_natl_sites = [NationalSite(item) for item in cal_soup.find('ul', {"id":"list_parks"}).find_all('div',{"class":"col-md-9 col-sm-9 col-xs-12 table-cell list_left"})]
-michigan_natl_sites = [NationalSite(item) for item in mi_soup.find('ul', {"id":"list_parks"}).find_all('div',{"class":"col-md-9 col-sm-9 col-xs-12 table-cell list_left"})]
+arkansas_natl_sites = [NationalSite(item) for item in ark_soup.find('ul', 
+  {"id": "list_parks"}).find_all('li', {"class":"clearfix"})]
+  
+california_natl_sites = [NationalSite(item) for item in cal_soup.find('ul', 
+  {"id": "list_parks"}).find_all('li',{"class":"clearfix"})]
+  
+michigan_natl_sites = [NationalSite(item) for item in mi_soup.find('ul', 
+{"id": "list_parks"}).find_all('li',{"class":"clearfix"})]
 
 ##Code to help you test these out:
 # for p in california_natl_sites:
 #     print ("#"*80)
 #     print(p)
 # for a in arkansas_natl_sites:
+#     print ("#"*80)
 #     print(a)
 # for m in michigan_natl_sites:
+#     print ("#"*80)
 #     print(m)
 
 
@@ -219,4 +231,19 @@ michigan_natl_sites = [NationalSite(item) for item in mi_soup.find('ul', {"id":"
 ## Note that running this step for ALL your data make take a minute or few to run -- so it's a good idea to test any methods/functions you write with just a little bit of data, so running the program will take less time!
 
 ## Also remember that IF you have None values that may occur, you might run into some problems and have to debug for where you need to put in some None value / error handling!
+
+def write_files(state_sites,filename):
+    with open(filename,"w") as csvfile:
+        csvfile.write("Name, Location, Type, Address, Description\n")
+        for site in state_sites:
+            csvfile.write('\"{}\",\"{}\",\"{}\",\"{}\","{}"\n'.format(site.name, site.location, site.type, site.get_mailing_address(), site.description))
+    
+
+write_files(arkansas_natl_sites, "arkansas.csv")
+write_files(california_natl_sites, "california.csv")
+write_files(michigan_natl_sites, "michigan.csv")
+
+
+
+
 
